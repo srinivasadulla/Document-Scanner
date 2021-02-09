@@ -6,8 +6,6 @@ def orderPoints(pts):
 
     rect_pts = np.zeros((4,2))
 
-    print(rect_pts)
-
     #top-left point will have minimum sum and bottom right point will have maximum sum
 
     pts_sum = np.sum(pts, axis=1)
@@ -25,7 +23,6 @@ def orderPoints(pts):
 
 def distance(pt1, pt2):
     # Calculates distance between two points
-    print(pt1, pt2)
     return np.sqrt(np.square(pt2[0]-pt1[0]) + np.square(pt2[1]-pt1[1]))
 
 

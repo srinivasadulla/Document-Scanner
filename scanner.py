@@ -15,8 +15,8 @@ import os
 class DocumentScanner:
     def __init__(self, root):
         self.root = root
-        self.root.geometry('1000x800+250+50')
-
+        # self.root.geometry('1000x800+250+50')
+        self.root.minsize(1000, 800)
         self.window_width = self.root.winfo_width()
         self.window_height = self.root.winfo_height()
 
@@ -30,20 +30,15 @@ class DocumentScanner:
         self.frame.place(relx=0.5, rely=0.02, width=800, height=60, anchor='n')
 
         self.frame2 = Frame(self.root, bg='#80c1ff', bd=5)
-        self.frame2.place(relx=0.5, rely=0.11, width=150, height=50, anchor='n')
+        self.frame2.place(relx=0.1, rely=0.11, width=150, height=50, anchor='n')
 
         self.entry = Entry(self.frame)
         self.entry.insert(0, 'Please select the Path')
-        self.entry.place(relwidth=0.67, relheight=1)
-
-        self.select_button = Button(self.frame, text='Select', command=self.getPath)
-        self.select_button["font"] = self.my_font
-        self.select_button.place(relx=0.69, relheight=1, relwidth=0.15)
-        self.select_button_status = 0
+        self.entry.place(relwidth=0.82, relheight=1)
 
         self.load_button = Button(self.frame, text='Load', command=self.loadImage)
         self.load_button["font"] = self.my_font
-        self.load_button.place(relx=0.85, relheight=1, relwidth=0.15)
+        self.load_button.place(relx=0.84, relheight=1, relwidth=0.15)
         self.load_button_status = 0
 
         self.scan_button = Button(self.frame2, text='Scan', fg="red", bg="green", command=lambda:self.scan_image(0))
@@ -59,10 +54,10 @@ class DocumentScanner:
         self.frame3 = Frame(self.root, bg='#80c1ff', bd=5)
         self.frame3.place(relx=0.25, rely=0.93, width=300, height=50, anchor='n')
 
-        self.cw_image = Image.open("cw.png")
+        self.cw_image = Image.open("tkinter_images/cw.png")
         self.cw_image = self.cw_image.resize((30, 30), Image.ANTIALIAS)
         self.cw_image = ImageTk.PhotoImage(self.cw_image)
-        self.ccw_image = Image.open("ccw.png")
+        self.ccw_image = Image.open("tkinter_images/ccw.png")
         self.ccw_image = self.ccw_image.resize((30, 30), Image.ANTIALIAS)
         self.ccw_image = ImageTk.PhotoImage(self.ccw_image) 
 
@@ -90,23 +85,26 @@ class DocumentScanner:
         self.canvas.bind('<ButtonRelease-1>', self.release)
         
 
-    def getPath(self):
+    def loadImage(self):
         self.filepath = filedialog.askopenfilename(title="Select an Image", filetypes=(("image files", "*.png *.jpg"), ("all files", "*.*")))
         self.entry.delete(0, "end")
         self.entry.insert(0, self.filepath)
         if len(self.filepath) > 0:
             self.select_button_status = 1
-
-    def loadImage(self):
-        if self.select_button_status == 0:
-            self.label.config(text="Please select image path before loading...")
-            self.label.place(relx=0.15, rely=0.13)
+        
+        else:
+            self.select_button_status = 0
+            self.label.config(text="Please select image path...")
+            self.label.place(relx=0.3, rely=0.13)
             return
         self.label.place_forget()
 
         self.orig_image = Image.open(self.filepath)
+        
+        if self.orig_image.mode != "RGB":
+            self.orig_image = self.orig_image.convert("RGB")
+        
         self.orig_width, self.orig_height = self.orig_image.size
-
         self.img_canvas_ratio = (0.98, 0.75)
 
         self.find_edges()
@@ -121,6 +119,7 @@ class DocumentScanner:
     def find_edges(self):
 
         cv_image = np.array(self.orig_image) 
+
         # Convert RGB to BGR 
         cv_image = cv_image[:, :, ::-1].copy() 
 
@@ -138,9 +137,12 @@ class DocumentScanner:
 
             src = cv2.approxPolyDP(c, 0.02*p, True)
             self.src_pts = []
-
             for i in src:
                 self.src_pts.append(tuple(i[0]))
+
+        else:
+            self.src_pts = [(0, 0), (0, self.orig_height), (self.orig_width, self.orig_height), (self.orig_width, 0)]
+            
 
 
     def display(self, flag):
@@ -274,7 +276,7 @@ class DocumentScanner:
     def scan_image(self, flag):
         if self.load_button_status == 0:
             self.label.config(text="Please load the image before scanning...")
-            self.label.place(relx=0.15, rely=0.13)
+            self.label.place(relx=0.3, rely=0.13)
             return
 
         self.label.place_forget()
@@ -312,10 +314,6 @@ class DocumentScanner:
         self.scanned_cv_image = cv2.cvtColor(self.scanned_cv_image, cv2.COLOR_BGR2GRAY)
         self.scanned_cv_image = cv2.threshold(self.scanned_cv_image, 0, 255, cv2.THRESH_OTSU | cv2.THRESH_BINARY)[1]
         self.scanned_pil_image = Image.fromarray(self.scanned_cv_image)
-        # self.temp_image = cv2.threshold(self.temp_image, 0, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)[1]
-        # kernel = np.array([[0, -1, 0], [-1, 5,-1], [0, -1, 0]])
-        # self.temp_image = cv2.filter2D(self.temp_image, -1, kernel)
-        
         self.scan_image(0)
 
     def color_filter(self):
@@ -327,12 +325,12 @@ class DocumentScanner:
     def cw_rotate(self):
         if self.load_button_status == 0:
             self.label.config(text="Please load the image before rotating...")
-            self.label.place(relx=0.15, rely=0.13)
+            self.label.place(relx=0.3, rely=0.13)
             return
 
         if self.scan_button_status == 1:
             self.label.config(text="Image cannot be rotated in after scanning...")
-            self.label.place(relx=0.15, rely=0.13)
+            self.label.place(relx=0.3, rely=0.13)
             return
 
         self.label.place_forget()
@@ -352,12 +350,12 @@ class DocumentScanner:
     def ccw_rotate(self):
         if self.load_button_status == 0:
             self.label.config(text="Please load the image before rotating...")
-            self.label.place(relx=0.15, rely=0.13)
+            self.label.place(relx=0.3, rely=0.13)
             return
 
         if self.scan_button_status == 1:
             self.label.config(text="Image cannot be rotated in after scanning...")
-            self.label.place(relx=0.15, rely=0.13)
+            self.label.place(relx=0.3, rely=0.13)
             return
 
         self.orig_image = self.orig_image.rotate(90, Image.NEAREST, expand = 1)
@@ -376,7 +374,7 @@ class DocumentScanner:
     def save_image(self):
         if self.scan_button_status == 0:
             self.label.config(text="Please scan the image before saving...")
-            self.label.place(relx=0.15, rely=0.13)
+            self.label.place(relx=0.3, rely=0.13)
             return
 
         if not os.path.exists("Output"):
@@ -395,7 +393,10 @@ class DocumentScanner:
 
 
     def ocr_transcript(self):
-        
+        if self.scan_button_status == 0:
+            self.label.config(text="Please scan the image before performing OCR...")
+            self.label.place(relx=0.3, rely=0.13)
+            return
         self.canvas2.delete("all")
         gray_im = cv2.cvtColor(self.scanned_orig_image, cv2.COLOR_BGR2GRAY)
         gray_im = cv2.threshold(gray_im, 0, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)[1]
@@ -430,12 +431,9 @@ class DocumentScanner:
             self.display(0)
 
 
-
-
-
-root = Tk()
-
-DocumentScanner(root)
-root.mainloop()
+if __name__ == "__main__":
+    root = Tk()
+    DocumentScanner(root)
+    root.mainloop()
 
 
